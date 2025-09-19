@@ -1,0 +1,38 @@
+name: Dagger call
+description: Use this to trigger Dagger call
+
+inputs:
+    call:
+        required: true
+        type: string
+    dagger-flags:
+        required: false
+        type: string
+        default: '-q -s'
+
+outputs:
+    output:
+        description: "Job output"
+        value: ${{ steps.exec.outputs.output }}
+
+runs:
+    using: 'composite'
+    steps:
+        -   name: 'Cache Dagger'
+            uses: actions/cache@v4
+            with:
+                path: |
+                    ~/.config/dagger
+                    ~/.cache/dagger
+                key: ${{ runner.os }}-dagger-${{ hashFiles('dagger.json', '.dagger/src/**') }}
+                restore-keys: ${{ runner.os }}-dagger-
+
+        -   id: exec
+            name: 'Run Dagger call'
+            uses: dagger/dagger-for-github@8.0.0
+            with:
+                version: 'latest'
+                call: ${{ inputs.call }}
+                dagger-flags: ${{ inputs.dagger-flags }}
+            env:
+                DAGGER_NO_NAG: '1'
